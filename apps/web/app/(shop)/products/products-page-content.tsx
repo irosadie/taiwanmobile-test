@@ -18,7 +18,7 @@ import { CheckoutDialog } from "./_components/checkout-dialog";
 export function ProductsPageContent() {
   const [urlSearch, setUrlSearch] = useQueryParam("search");
   const [search, setSearch] = useState(urlSearch);
-  const debouncedSearch = useDebounce(search, 300);
+  const debouncedSearch = useDebounce(search);
   const products = useDataTable({ search: debouncedSearch });
   const checkout = useInsertOne();
   const [cart, setCart] = useState<CartItem[]>([]);

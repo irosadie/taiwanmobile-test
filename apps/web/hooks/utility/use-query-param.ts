@@ -6,6 +6,7 @@ export function useQueryParam(key: string, fallback = "") {
   const value = params.get(key) ?? fallback;
   const setValue = useCallback((next: string) => {
     const url = new URL(window.location.href);
+    if ((url.searchParams.get(key) ?? "") === next) return;
     if (next) url.searchParams.set(key, next); else url.searchParams.delete(key);
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }, [key]);

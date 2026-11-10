@@ -68,9 +68,29 @@ test('checkout failure preserves cart and allows retry', async ({ page }) => {
 });
 
 test('search debounce, URL synchronization and empty result recovery', async ({ page }) => {
-  await openShop(page);
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: /加入購物車/ })).toHaveCount(8);
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  const queries: string[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/proxy/products') queries.push(url.searchParams.get('search') ?? '');
+  });
   const search = page.getByRole('searchbox');
+  await search.fill('u');
+  await page.clock.runFor(200);
+  await search.fill('us');
+  await page.clock.runFor(200);
   await search.fill('usb');
+  await expect(search).toHaveValue('usb');
+  await page.clock.runFor(299);
+  expect(queries).toEqual([]);
+  await expect(page).not.toHaveURL(/search=/);
+  await expect(page.getByRole('button', { name: /加入購物車/ })).toHaveCount(8);
+  await page.clock.runFor(1);
+  await expect.poll(() => queries).toEqual(['usb']);
+  await page.clock.resume();
   await expect(page.getByRole('button', { name: /加入購物車/ })).toHaveCount(1);
   await expect(page).toHaveURL(/search=usb/);
   await expect(page.getByRole('button', { name: '加入購物車 USB隨身碟', exact: true })).toBeVisible();
@@ -78,6 +98,10 @@ test('search debounce, URL synchronization and empty result recovery', async ({ 
   await expect(page.getByRole('button', { name: /加入購物車/ })).toHaveCount(0);
   await search.fill('');
   await expect(page.getByRole('button', { name: /加入購物車/ })).toHaveCount(8);
+  await expect(page).not.toHaveURL(/search=/);
+  await page.goto('/?search=usb');
+  await expect(search).toHaveValue('usb');
+  await expect(page.getByRole('button', { name: /加入購物車/ })).toHaveCount(1);
 });
 
 test('catalog failure and retry', async ({ page }) => {
