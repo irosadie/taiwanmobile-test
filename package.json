@@ -1,0 +1,23 @@
+{
+  "name": "taiwanmobile-shopping-cart",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @repo/web",
+    "build": "npm run build --workspace @repo/web",
+    "start": "npm run start --workspace @repo/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0",
+    "@types/node": "^24.10.0",
+    "@playwright/test": "^1.58.2"
+  }
+}

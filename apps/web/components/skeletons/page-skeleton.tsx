@@ -1,0 +1,2 @@
+import { Skeleton } from "@/components/ui/skeleton";
+export function PageSkeleton() { return <main aria-label="載入商品中" aria-busy="true" className="mx-auto w-full max-w-[1200px] space-y-[30px] bg-white p-5"><Skeleton className="h-[85px] w-full rounded-none"/><div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">{Array.from({length:8},(_,i) => <Skeleton key={i} className="h-80 rounded-lg"/>)}</div></main>; }
