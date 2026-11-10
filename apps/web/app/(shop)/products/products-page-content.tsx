@@ -8,6 +8,7 @@ import { useDataTable } from "@/hooks/transactions/use-products";
 import { useInsertOne } from "@/hooks/transactions/use-checkout";
 import { useDebounce } from "@/hooks/utility/use-debounce";
 import { useQueryParam } from "@/hooks/utility/use-query-param";
+import { useLanguage } from "@/providers/language-provider";
 import { ShopHeader } from "./_components/shop-header";
 import { ProductSearchBar } from "./_components/product-search-bar";
 import { ProductGrid } from "./_components/product-grid";
@@ -16,6 +17,7 @@ import { RemoveItemDialog } from "./_components/remove-item-dialog";
 import { CheckoutDialog } from "./_components/checkout-dialog";
 
 export function ProductsPageContent() {
+  const { t } = useLanguage();
   const [urlSearch, setUrlSearch] = useQueryParam("search");
   const [search, setSearch] = useState(urlSearch);
   const debouncedSearch = useDebounce(search);
@@ -44,15 +46,15 @@ export function ProductsPageContent() {
     if (checkoutLock.current || !cartQuantitySchema.safeParse(quantity).success) return;
     const existing = cartRef.current.find(item => item.product.id === product.id);
     if (!cartQuantitySchema.safeParse((existing?.quantity ?? 0) + quantity).success) {
-      toast.error("每項商品最多可加入 99 件"); return;
+      toast.error(t("maxQuantityError")); return;
     }
     updateCart(previous => existing
       ? previous.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item)
       : [...previous, { product, quantity }]);
     const total = cartRef.current.reduce((sum, item) => sum + item.quantity, 0);
-    toast.success(`已加入 ${product.name} × ${quantity}`, {
-      description: `購物車共 ${total} 件商品`,
-      action: { label: "查看購物車", onClick: () => setCartOpen(true) },
+    toast.success(t("addedToCart", { product: product.name, quantity }), {
+      description: t("cartItemCount", { count: total }),
+      action: { label: t("viewCart"), onClick: () => setCartOpen(true) },
     });
   }
   function updateQuantity(id: number, quantity: number) {
@@ -70,16 +72,16 @@ export function ProductsPageContent() {
   function confirmCheckout() {
     if (checkoutLock.current) return;
     const payload = checkoutPayloadSchema.safeParse({ items: cartRef.current.map(item => ({ productId: item.product.id, quantity: item.quantity })) });
-    if (!payload.success) { toast.error("請確認購物車商品及數量"); return; }
+    if (!payload.success) { toast.error(t("cartValidationError")); return; }
     checkoutLock.current = true;
     checkout.mutate(payload.data, {
       onSuccess: () => {
         checkoutLock.current = false;
         updateCart(() => []);
         setCheckoutOpen(false); setCartOpen(false);
-        toast.success("結帳成功！感謝您的購買。");
+        toast.success(t("checkoutSuccess"));
       },
-      onError: () => { toast.error("結帳失敗，購物車已保留，請再試一次。"); },
+      onError: () => { toast.error(t("checkoutFailure")); },
       onSettled: () => { checkoutLock.current = false; },
     });
   }
@@ -88,7 +90,7 @@ export function ProductsPageContent() {
       <ShopHeader totalQuantity={summary.totalQuantity} onOpenCart={() => setCartOpen(true)}>
         <ProductSearchBar value={search} onChange={setSearch} onClear={() => setSearch("")} />
       </ShopHeader>
-      <main id="catalog" aria-label="商品展示">
+      <main id="catalog" aria-label={t("productList")}>
         <ProductGrid products={products.data ?? []} isPending={products.isPending} isError={products.isError} onRetry={() => void products.refetch()} onClearSearch={() => setSearch("")} onAdd={add} />
       </main>
       <CartSheet open={cartOpen} onOpenChange={open => { if (!checkoutLock.current) setCartOpen(open); }} items={cart} summary={summary} onUpdateQuantity={updateQuantity} onAdjustQuantity={adjustQuantity} onRemove={setRemoveItem} onCheckout={() => setCheckoutOpen(true)} />
